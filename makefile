@@ -3,8 +3,11 @@ target=Main
 $(target): Main.hs
 	stack ghc $<
 
-test: $(target)
-	./$(target)
+Main.hs : Game.hs
+	stack ghc $<
+
+Game.hs : Snake.hs
+	stack ghc $<
 
 
 clean :
