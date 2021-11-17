@@ -10,7 +10,7 @@ windowTitle = "Snake Game"
 
 
 cellSize, cellWidth, cellHeight :: Num a => a
-cellSize   = 20
+cellSize   = 10
 cellWidth  = fromIntegral $ wWidth  `div` cellSize
 cellHeight = fromIntegral $ wHeight `div` cellSize
 

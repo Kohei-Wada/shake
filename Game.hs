@@ -39,6 +39,7 @@ initGame = do
     pure $ Game InGame target [snakeH] SAStop 0
 
 
+
 updateGame :: Float -> Game -> IO Game
 updateGame _ g@Game{..} = case _state of
     InGame -> do
@@ -52,7 +53,8 @@ updateGame _ g@Game{..} = case _state of
                 then do
                     food <- makeNewFood g
                     pure $ g { _food = food, _snake = snake, _score = _score + 1}
-                else pure $ g { _snake = init snake}
+                else
+                    pure $ g { _snake = init snake}
 
     GameOver -> pure g
 
@@ -66,6 +68,7 @@ drawWorld Game{..} = case _state of
         , pictures $ map (drawCell (greyN 0.6)) (tail _snake)
         , translate (-wWidth/2+10) (-wHeight/2+10)  . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
         ]
+
         where
             cell = translate (-wWidth/2) (-wHeight/2) $ 
                 polygon [(0, 0), (0, cellSize), (cellSize, cellSize), (cellSize, 0)]
@@ -81,8 +84,7 @@ drawWorld Game{..} = case _state of
 
 
 makeNewFood :: Game -> IO Food
-makeNewFood game = do 
-    fix $ \loop -> do
+makeNewFood game = fix $ \loop -> do
         food <- makeRandomFood 
         if food `elem` _snake game  then loop else pure food
 
@@ -90,31 +92,36 @@ makeNewFood game = do
 eventHandler :: Event -> Game -> IO Game
 eventHandler e game@Game{..} = case _state of
     InGame -> case e of
-        EventKey (SpecialKey KeyUp)    Down _ _ -> 
-            pure $ if _action == SADown  
-                      then game 
-                      else game { _action = SAUp }
 
-        EventKey (SpecialKey KeyDown)  Down _ _ -> 
-            pure $ if _action == SAUp    
-                      then game 
-                      else game { _action = SADown }
+        EventKey (SpecialKey KeyUp) Down _ _ -> 
+            pure $ if _action == SADown then game else game { _action = SAUp }
 
-        EventKey (SpecialKey KeyLeft)  Down _ _ -> 
-            pure $ if _action == SARight 
-                      then game 
-                      else game { _action = SALeft }
+        EventKey (Char 'e') Down _ _ -> 
+            pure $ if _action == SADown then game else game { _action = SAUp }
+
+        EventKey (SpecialKey KeyDown) Down _ _ -> 
+            pure $ if _action == SAUp then game else game { _action = SADown }
+
+        EventKey (Char 'd') Down _ _ -> 
+            pure $ if _action == SAUp then game else game { _action = SADown }
+
+        EventKey (SpecialKey KeyLeft) Down _ _ -> 
+            pure $ if _action == SARight then game else game { _action = SALeft }
+
+        EventKey (Char 'a') Down _ _ -> 
+            pure $ if _action == SARight then game else game { _action = SALeft }
 
         EventKey (SpecialKey KeyRight) Down _ _ -> 
-            pure $ if _action == SALeft  
-                      then game 
-                      else game { _action = SARight }
+            pure $ if _action == SALeft then game else game { _action = SARight }
+
+        EventKey (Char 'f') Down _ _ -> 
+            pure $ if _action == SALeft then game else game { _action = SARight }
 
         EventKey (Char 'q') Down _ _ -> 
             exitSuccess
 
-        _ ->
-            pure game 
+        _ -> pure game 
+
 
     GameOver -> case e of
         EventKey (Char 'q') Down _ _ -> 
@@ -125,6 +132,7 @@ eventHandler e game@Game{..} = case _state of
 
         _ ->
             pure game 
+
 
 
 gameMain :: IO ()
