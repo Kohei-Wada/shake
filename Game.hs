@@ -1,17 +1,16 @@
 {-#LANGUAGE RecordWildCards #-}
 
-
 module Game where
 
 import Snake
-
 import Data.Function (fix)
 import Graphics.Gloss.Interface.IO.Game
 import System.Random.MWC
+import System.Exit
 
 
 wWidth, wHeight :: Num a => a
-wWidth  = 640
+wWidth  = 840
 wHeight = 480
 
 
@@ -29,20 +28,20 @@ randomPosition :: GenIO -> IO Position
 randomPosition gen = (,) <$> uniformR (0, cWidth - 1) gen <*> uniformR (0, cHeight - 1) gen
 
 
+type Food = Position
 data GameState = InGame | GameOver
-
 
 data World = World
     { _state  :: GameState
-    , _target :: Position
-    , _snake  :: [Position]
+    , _food   :: Food
+    , _snake  :: Snake
     , _action :: SnakeAction
     , _score  :: Int
     }
 
 
-generateNewWorld :: IO World
-generateNewWorld = do
+initGame :: IO World
+initGame = do
     (target, snakeH) <- fix $ \loop -> do
         g <- createSystemRandom
         target <- randomPosition g
@@ -51,11 +50,10 @@ generateNewWorld = do
     pure $ World InGame target [snakeH] SAStop 0
 
 
-
 drawWorld :: World -> IO Picture
 drawWorld World{..} = case _state of
     InGame -> pure $ pictures
-        [ drawCell red _target
+        [ drawCell red _food
         , drawCell (greyN 0.3) (head _snake)
         , pictures $ map (drawCell (greyN 0.6)) (tail _snake)
         , translate (-wWidth/2+10) (-wHeight/2+10)  . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
@@ -72,7 +70,6 @@ drawWorld World{..} = case _state of
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]
-
 
 
 eventHandler :: Event -> World -> IO World
@@ -97,12 +94,20 @@ eventHandler e game@World{..} = case _state of
             pure $ if _action == SALeft  
                       then game 
                       else game { _action = SARight }
+
+        EventKey (Char 'q') Down _ _ -> 
+            exitSuccess
+
+
         _ ->
             pure game 
 
     GameOver -> case e of
+        EventKey (Char 'q') Down _ _ -> 
+            exitSuccess
+
         EventKey (SpecialKey KeyEnter) Down _ _ -> 
-            generateNewWorld
+            initGame
 
         _ ->
             pure game 
@@ -116,7 +121,6 @@ makeNewTarget game  = do
         if target `elem` _snake game  then loop else pure target
 
 
-
 updateGame :: Float -> World -> IO World
 updateGame _ w@World{..} = case _state of
     InGame -> do
@@ -126,19 +130,18 @@ updateGame _ w@World{..} = case _state of
 
         if isSelfIntersection || x < 0 || x >= cWidth || y < 0 || y >= cHeight
             then pure $ w { _state = GameOver }
-            else if (x, y) == _target
+            else if (x, y) == _food
                 then do
                     target <- makeNewTarget w
-                    pure $ w { _target = target, _snake = snake, _score = _score + 1}
+                    pure $ w { _food = target, _snake = snake, _score = _score + 1}
                 else pure $ w { _snake = init snake}
 
     GameOver -> pure w
 
 
+
 gameMain :: IO ()
 gameMain = do
-    world <- generateNewWorld
+    world <- initGame
     playIO window white 10 world drawWorld eventHandler updateGame
-
-
 
