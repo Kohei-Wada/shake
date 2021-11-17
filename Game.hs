@@ -1,5 +1,6 @@
 {-#LANGUAGE RecordWildCards #-}
 
+
 module Game where
 
 import Snake
@@ -24,9 +25,9 @@ cWidth  = fromIntegral $ wWidth  `div` cSize
 cHeight = fromIntegral $ wHeight `div` cSize
 
 
-
 randomPosition :: GenIO -> IO Position
 randomPosition gen = (,) <$> uniformR (0, cWidth - 1) gen <*> uniformR (0, cHeight - 1) gen
+
 
 data GameState = InGame | GameOver
 
@@ -42,11 +43,11 @@ data World = World
 
 generateNewWorld :: IO World
 generateNewWorld = do
-    (target, snakeH) <- withSystemRandom . asGenIO $ \gen -> do
-        fix $ \loop -> do
-            target <- randomPosition gen
-            snakeH <- randomPosition gen
-            if target == snakeH then loop else pure (target, snakeH)
+    (target, snakeH) <- fix $ \loop -> do
+        g <- createSystemRandom
+        target <- randomPosition g
+        snakeH <- randomPosition g
+        if target == snakeH then loop else pure (target, snakeH)
     pure $ World InGame target [snakeH] SAStop 0
 
 
@@ -71,6 +72,7 @@ drawWorld World{..} = case _state of
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]
+
 
 
 eventHandler :: Event -> World -> IO World
@@ -106,6 +108,15 @@ eventHandler e game@World{..} = case _state of
             pure game 
 
 
+makeNewTarget :: World -> IO Position
+makeNewTarget game  = do
+    fix $ \loop -> do
+        g <- createSystemRandom
+        target <- randomPosition g 
+        if target `elem` _snake game  then loop else pure target
+
+
+
 updateGame :: Float -> World -> IO World
 updateGame _ w@World{..} = case _state of
     InGame -> do
@@ -117,18 +128,17 @@ updateGame _ w@World{..} = case _state of
             then pure $ w { _state = GameOver }
             else if (x, y) == _target
                 then do
-                    target <- withSystemRandom . asGenIO $ \gen -> do
-                        fix $ \loop -> do
-                            target <- randomPosition gen
-                            if target `elem` snake then loop else pure target
+                    target <- makeNewTarget w
                     pure $ w { _target = target, _snake = snake, _score = _score + 1}
                 else pure $ w { _snake = init snake}
 
     GameOver -> pure w
 
 
-gameInit :: IO ()
-gameInit = do
+gameMain :: IO ()
+gameMain = do
     world <- generateNewWorld
     playIO window white 10 world drawWorld eventHandler updateGame
+
+
 

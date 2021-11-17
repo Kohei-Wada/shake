@@ -1,8 +1,6 @@
 import Game
 
-
 main :: IO ()
-main = gameInit
-
-
+main = do 
+    gameMain
 
