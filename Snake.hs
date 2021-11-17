@@ -1,6 +1,8 @@
 module Snake where
 
 import Types
+import Utils
+import System.Random.MWC
 
 type Snake = [Position]
 
@@ -22,4 +24,6 @@ moveSnake SALeft  (x, y) = (x - 1, y)
 moveSnake SARight (x, y) = (x + 1, y)
 
 
-
+initSnake :: IO Snake
+initSnake = do 
+    createSystemRandom >>= randomPosition >>= \p -> return [p]

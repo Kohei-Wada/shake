@@ -29,14 +29,19 @@ data Game = Game
     }
 
 
+makeNewFood :: Game -> IO Food
+makeNewFood game = fix $ \loop -> do
+        food <- makeRandomFood 
+        if food `elem` _snake game  then loop else pure food
+
+
 initGame :: IO Game
-initGame = do
-    (target, snakeH) <- fix $ \loop -> do
-        g <- createSystemRandom
-        target <- randomPosition g
-        snakeH <- randomPosition g
-        if target == snakeH then loop else pure (target, snakeH)
-    pure $ Game InGame target [snakeH] SAStop 0
+initGame = do 
+    snake <- initSnake
+    food <- fix $ \loop -> do 
+        food <- makeRandomFood 
+        if food == head snake then loop else pure food
+    pure $ Game InGame food snake SAStop 0
 
 
 
@@ -81,12 +86,6 @@ drawWorld Game{..} = case _state of
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]
-
-
-makeNewFood :: Game -> IO Food
-makeNewFood game = fix $ \loop -> do
-        food <- makeRandomFood 
-        if food `elem` _snake game  then loop else pure food
 
 
 eventHandler :: Event -> Game -> IO Game
