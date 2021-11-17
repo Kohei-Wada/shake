@@ -3,35 +3,24 @@
 module Game where
 
 import Snake
+import Food
+import Types
+import Options
+import Utils
+
 import Data.Function (fix)
 import Graphics.Gloss.Interface.IO.Game
 import System.Random.MWC
 import System.Exit
 
 
-wWidth, wHeight :: Num a => a
-wWidth  = 840
-wHeight = 480
-
-
 window :: Display
-window = InWindow "Snake Game" (wWidth, wHeight) (100, 100)
+window = InWindow windowTitle (wWidth, wHeight) (100, 100)
 
 
-cSize, cWidth, cHeight :: Num a => a
-cSize   = 20
-cWidth  = fromIntegral $ wWidth  `div` cSize
-cHeight = fromIntegral $ wHeight `div` cSize
-
-
-randomPosition :: GenIO -> IO Position
-randomPosition gen = (,) <$> uniformR (0, cWidth - 1) gen <*> uniformR (0, cHeight - 1) gen
-
-
-type Food = Position
 data GameState = InGame | GameOver
 
-data World = World
+data Game = Game
     { _state  :: GameState
     , _food   :: Food
     , _snake  :: Snake
@@ -40,18 +29,37 @@ data World = World
     }
 
 
-initGame :: IO World
+initGame :: IO Game
 initGame = do
     (target, snakeH) <- fix $ \loop -> do
         g <- createSystemRandom
         target <- randomPosition g
         snakeH <- randomPosition g
         if target == snakeH then loop else pure (target, snakeH)
-    pure $ World InGame target [snakeH] SAStop 0
+    pure $ Game InGame target [snakeH] SAStop 0
 
 
-drawWorld :: World -> IO Picture
-drawWorld World{..} = case _state of
+updateGame :: Float -> Game -> IO Game
+updateGame _ g@Game{..} = case _state of
+    InGame -> do
+        let (x, y) = moveSnake _action $ head _snake
+            isSelfIntersection = _action /= SAStop && (x, y) `elem` _snake
+            snake = (x, y) : _snake
+
+        if isSelfIntersection || x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
+            then pure $ g { _state = GameOver }
+            else if (x, y) == _food
+                then do
+                    food <- makeNewFood g
+                    pure $ g { _food = food, _snake = snake, _score = _score + 1}
+                else pure $ g { _snake = init snake}
+
+    GameOver -> pure g
+
+
+
+drawWorld :: Game -> IO Picture
+drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
         [ drawCell red _food
         , drawCell (greyN 0.3) (head _snake)
@@ -60,9 +68,9 @@ drawWorld World{..} = case _state of
         ]
         where
             cell = translate (-wWidth/2) (-wHeight/2) $ 
-                polygon [(0, 0), (0, cSize), (cSize, cSize), (cSize, 0)]
+                polygon [(0, 0), (0, cellSize), (cellSize, cellSize), (cellSize, 0)]
 
-            drawCell c (x, y) = translate (fromIntegral x * cSize) (fromIntegral y * cSize) $ 
+            drawCell c (x, y) = translate (fromIntegral x * cellSize) (fromIntegral y * cellSize) $ 
                 color c cell
 
     GameOver -> pure $ pictures
@@ -72,8 +80,15 @@ drawWorld World{..} = case _state of
         ]
 
 
-eventHandler :: Event -> World -> IO World
-eventHandler e game@World{..} = case _state of
+makeNewFood :: Game -> IO Food
+makeNewFood game = do 
+    fix $ \loop -> do
+        food <- makeRandomFood 
+        if food `elem` _snake game  then loop else pure food
+
+
+eventHandler :: Event -> Game -> IO Game
+eventHandler e game@Game{..} = case _state of
     InGame -> case e of
         EventKey (SpecialKey KeyUp)    Down _ _ -> 
             pure $ if _action == SADown  
@@ -98,7 +113,6 @@ eventHandler e game@World{..} = case _state of
         EventKey (Char 'q') Down _ _ -> 
             exitSuccess
 
-
         _ ->
             pure game 
 
@@ -113,35 +127,10 @@ eventHandler e game@World{..} = case _state of
             pure game 
 
 
-makeNewTarget :: World -> IO Position
-makeNewTarget game  = do
-    fix $ \loop -> do
-        g <- createSystemRandom
-        target <- randomPosition g 
-        if target `elem` _snake game  then loop else pure target
-
-
-updateGame :: Float -> World -> IO World
-updateGame _ w@World{..} = case _state of
-    InGame -> do
-        let (x, y) = moveSnake _action $ head _snake
-            isSelfIntersection = _action /= SAStop && (x, y) `elem` _snake
-            snake = (x, y) : _snake
-
-        if isSelfIntersection || x < 0 || x >= cWidth || y < 0 || y >= cHeight
-            then pure $ w { _state = GameOver }
-            else if (x, y) == _food
-                then do
-                    target <- makeNewTarget w
-                    pure $ w { _food = target, _snake = snake, _score = _score + 1}
-                else pure $ w { _snake = init snake}
-
-    GameOver -> pure w
-
-
-
 gameMain :: IO ()
 gameMain = do
-    world <- initGame
-    playIO window white 10 world drawWorld eventHandler updateGame
+    game <- initGame
+    playIO window white 10 game drawWorld eventHandler updateGame
+
+
 
