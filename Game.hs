@@ -44,7 +44,6 @@ initGame = do
     pure $ Game InGame food snake SAStop 0
 
 
-
 updateGame :: Float -> Game -> IO Game
 updateGame _ g@Game{..} = case _state of
     InGame -> do
@@ -64,7 +63,6 @@ updateGame _ g@Game{..} = case _state of
     GameOver -> pure g
 
 
-
 drawWorld :: Game -> IO Picture
 drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
@@ -82,7 +80,7 @@ drawWorld Game{..} = case _state of
                 color c cell
 
     GameOver -> pure $ pictures
-        [ translate (-270) 20     . scale 0.7 0.7 $ text "GAME OVER"
+        [ translate (-270) 20     . scale 0.7 0.7 $ text "FUCK YOU!"
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+target="./Main"
+
+make clean
+
+make 
+
+$target
+

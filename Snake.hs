@@ -15,7 +15,6 @@ data SnakeAction
     deriving Eq
 
 
-
 moveSnake :: SnakeAction -> Position -> Position
 moveSnake SAStop  (x, y) = (x, y)
 moveSnake SAUp    (x, y) = (x, y + 1)
@@ -26,4 +25,10 @@ moveSnake SARight (x, y) = (x + 1, y)
 
 initSnake :: IO Snake
 initSnake = do 
-    createSystemRandom >>= randomPosition >>= \p -> return [p]
+    createSystemRandom >>= randomPosition >>= \p -> return $ [p]
+
+
+updateSnakeAction :: Snake -> SnakeAction -> Snake
+updateSnakeAction s a = s
+
+
