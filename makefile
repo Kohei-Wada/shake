@@ -1,5 +1,8 @@
 target=Main
 
+
+all : $(target)
+
 $(target): Main.hs
 	stack ghc $<
 
@@ -14,3 +17,8 @@ clean :
 	rm -rf *o
 	rm -rf *hi
 	rm -rf $(target) 
+
+
+test : clean all
+	./$(target)
+
