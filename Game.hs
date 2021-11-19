@@ -12,13 +12,11 @@ import Data.Function (fix)
 import Graphics.Gloss.Interface.IO.Game
 import System.Random.MWC
 import System.Exit
-
-
-window :: Display
-window = InWindow windowTitle (wWidth, wHeight) (100, 100)
+import Control.Monad
 
 
 data GameState = InGame | GameOver
+
 
 data Game = Game
     { _state  :: GameState
@@ -44,23 +42,27 @@ initGame = do
     pure $ Game InGame food snake SAStop 0
 
 
+
 updateGame :: Float -> Game -> IO Game
-updateGame _ g@Game{..} = case _state of
-    InGame -> do
-        let (x, y) = moveSnake _action $ head _snake
-            isSelfIntersection = _action /= SAStop && (x, y) `elem` _snake
-            snake = (x, y) : _snake
+updateGame _ g@Game{..} = case _state of 
+    InGame -> do 
+        let snake = updateSnake _snake _action
+            (tmpx, tmpy) = head snake
+        
+        if selfIntersection _snake _action  
+           || tmpx < 0 || tmpx >= cellWidth || tmpy < 0 || tmpy >= cellHeight
 
-        if isSelfIntersection || x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
-            then pure $ g { _state = GameOver }
-            else if (x, y) == _food
-                then do
-                    food <- makeNewFood g
-                    pure $ g { _food = food, _snake = snake, _score = _score + 1}
-                else
-                    pure $ g { _snake = init snake}
-
+           then pure $ g { _state = GameOver } 
+           else if head snake  == _food
+               then do 
+                    food <- makeNewFood g 
+                    pure $ g { _food = food, _snake = snake, _score = _score + 1 }
+               else
+                    pure $ g { _snake = init snake } 
+                
     GameOver -> pure g
+
+                             
 
 
 drawWorld :: Game -> IO Picture
@@ -69,7 +71,7 @@ drawWorld Game{..} = case _state of
         [ drawCell red _food
         , drawCell (greyN 0.3) (head _snake)
         , pictures $ map (drawCell (greyN 0.6)) (tail _snake)
-        , translate (-wWidth/2+10) (-wHeight/2+10)  . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
+        , translate (-wWidth/2+10) (-wHeight/2+10) . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
         ]
 
         where
@@ -84,6 +86,7 @@ drawWorld Game{..} = case _state of
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]
+
 
 
 eventHandler :: Event -> Game -> IO Game
@@ -131,11 +134,11 @@ eventHandler e game@Game{..} = case _state of
             pure game 
 
 
-
 gameMain :: IO ()
 gameMain = do
+    let window = InWindow windowTitle (wWidth, wHeight) (100, 100)
     game <- initGame
-    playIO window white 10 game drawWorld eventHandler updateGame
+    playIO window white 20 game drawWorld eventHandler updateGame
 
 
 

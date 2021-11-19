@@ -32,3 +32,10 @@ updateSnakeAction :: Snake -> SnakeAction -> Snake
 updateSnakeAction s a = s
 
 
+updateSnake :: Snake -> SnakeAction -> Snake
+updateSnake s a = let nextHead = moveSnake a $ head s in nextHead : s
+
+
+selfIntersection :: Snake -> SnakeAction -> Bool
+selfIntersection s a = let tmp = moveSnake a $ head s in tmp `elem` tail s 
+
