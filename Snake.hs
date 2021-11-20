@@ -16,9 +16,8 @@ data SnakeAction
     | SADown 
     | SALeft 
     | SARight 
-    | SANone
+    | SANone  -- Never used
     deriving Eq
-
 
 
 snakeHead :: Snake -> Position 
@@ -74,7 +73,7 @@ initSnake = do
 
 updateSnakeAction :: Snake -> SnakeAction -> Snake
 updateSnakeAction s@Snake{..} a = 
-        if _action /= invAction _action then s { _action = a } else s
+        if a /= invAction _action then s { _action = a } else s
 
 
 updateSnake :: Snake -> Snake

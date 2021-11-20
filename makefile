@@ -9,9 +9,20 @@ $(target): Main.hs
 Main.hs : Game.hs
 	stack ghc $<
 
-Game.hs : Snake.hs
-	stack ghc $<
+Game.hs : Snake.hs Food.hs Types.hs Options.hs
 
+Food.hs : Utils.hs Types.hs Options.hs
+
+Snake.hs : Types.hs Utils.hs
+
+Types.hs : 
+	stack ghc $@
+
+Utils.hs : 
+	stack ghc $@
+
+Options.hs :
+	stack ghc $@
 
 clean :
 	rm -rf *o
@@ -19,6 +30,7 @@ clean :
 	rm -rf $(target) 
 
 
-test : clean all
+test : all
 	./$(target)
+
 
