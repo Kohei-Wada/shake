@@ -6,8 +6,8 @@ import Utils
 import System.Random.MWC
 
 data Snake = Snake 
-    {
-    _ls :: [Position]
+    { _ls     :: [Position]
+    , _action :: SnakeAction
     }
 
 data SnakeAction 
@@ -16,6 +16,7 @@ data SnakeAction
     | SADown 
     | SALeft 
     | SARight 
+    | SANone
     deriving Eq
 
 
@@ -23,8 +24,10 @@ data SnakeAction
 snakeHead :: Snake -> Position 
 snakeHead s@Snake{..} = head _ls
 
+
 snakeTail :: Snake -> [Position]
 snakeTail s@Snake{..} = tail _ls
+
 
 snakeInit :: Snake -> [Position]
 snakeInit s@Snake{..} = init _ls
@@ -32,6 +35,7 @@ snakeInit s@Snake{..} = init _ls
 
 snakeHeadX :: Snake -> Int
 snakeHeadX s@Snake{..} = fst $ head _ls
+
 
 snakeHeadY :: Snake -> Int
 snakeHeadY s@Snake{..} = snd $ head _ls
@@ -42,9 +46,11 @@ snakeInterference s p = p `elem` _ls s
 
 
 prevSnake :: Snake -> Snake
-prevSnake s = Snake $ init $ _ls s
+prevSnake s@Snake{..} = s{ _ls = init _ls }
+
 
 invAction :: SnakeAction -> SnakeAction 
+invAction SAStop  = SANone
 invAction SAUp    = SADown
 invAction SADown  = SAUp
 invAction SARight = SALeft
@@ -60,22 +66,24 @@ moveSnake SARight (x, y) = (x + 1, y)
 
 
 initSnake :: IO Snake
-initSnake = createSystemRandom >>= randomPosition >>= \p -> return $ Snake [p]
+initSnake = do 
+    r <- createSystemRandom 
+    p <- randomPosition r
+    return $ Snake [p] SAStop
 
 
 updateSnakeAction :: Snake -> SnakeAction -> Snake
-updateSnakeAction s a = s
+updateSnakeAction s@Snake{..} a = 
+        if _action /= invAction _action then s { _action = a } else s
 
 
-updateSnake :: Snake -> SnakeAction -> Snake
-updateSnake s a =  Snake $ (moveSnake a (snakeHead s)) : _ls s
+updateSnake :: Snake -> Snake
+updateSnake s@Snake{..} = 
+    let newHead = moveSnake _action (snakeHead s) in s { _ls = newHead : _ls }
 
 
---TODO  separate snake action from game modlue
-selfIntersection :: Snake -> SnakeAction -> Bool
-selfIntersection s SAStop = False
-selfIntersection s _ = head (_ls s) `elem` (tail) (_ls s)
-
-
-
+selfIntersection :: Snake -> Bool
+selfIntersection s@Snake{..} = 
+    if _action == SAStop then False else head _ls `elem` tail _ls
+                                  
 

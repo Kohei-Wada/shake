@@ -20,7 +20,6 @@ data Game = Game
     { _state  :: GameState
     , _food   :: Food
     , _snake  :: Snake
-    , _action :: SnakeAction
     , _score  :: Int
     }
 
@@ -42,16 +41,15 @@ initGame = do
     food <- fix $ \loop -> do 
         food <- makeRandomFood 
         if food == snakeHead snake  then loop else pure food
-    pure $ Game InGame food snake SAStop 0
+    pure $ Game InGame food snake 0
 
 
 updateGame :: Float -> Game -> IO Game
 updateGame _ g@Game{..} = case _state of 
     InGame -> do 
-        let snake = updateSnake _snake _action
+        let snake = updateSnake _snake 
 
-        if isPossibleSnake snake || 
-           selfIntersection snake _action
+        if isPossibleSnake snake || selfIntersection snake 
            then 
                 pure $ g { _state = GameOver } 
            else 
@@ -87,37 +85,33 @@ drawWorld Game{..} = case _state of
         ]
 
 
-updateAction :: Game -> SnakeAction -> Game
-updateAction g@Game{..} a = if _action /= invAction a then g{ _action = a } else g
-
-
 eventHandler :: Event -> Game -> IO Game
 eventHandler e g@Game{..} = case _state of
     InGame -> case e of
 
         EventKey (SpecialKey KeyUp) Down _ _ -> 
-            pure $ updateAction g SAUp
+            pure $ g { _snake = updateSnakeAction _snake SAUp }
 
         EventKey (Char 'e') Down _ _ -> 
-            pure $ updateAction g SAUp
+            pure $ g { _snake = updateSnakeAction _snake SAUp }
 
         EventKey (SpecialKey KeyDown) Down _ _ -> 
-            pure $ updateAction g SADown
+            pure $ g { _snake = updateSnakeAction _snake SADown }
 
         EventKey (Char 'd') Down _ _ -> 
-            pure $ updateAction g SADown
+            pure $ g { _snake = updateSnakeAction _snake SADown }
 
         EventKey (SpecialKey KeyLeft) Down _ _ -> 
-            pure $ updateAction g SALeft
+            pure $ g { _snake = updateSnakeAction _snake SALeft }
 
         EventKey (Char 'a') Down _ _ -> 
-            pure $ updateAction g SALeft
+            pure $ g { _snake = updateSnakeAction _snake SALeft }
 
         EventKey (SpecialKey KeyRight) Down _ _ -> 
-            pure $ updateAction g SARight
+            pure $ g { _snake = updateSnakeAction _snake SARight }
 
         EventKey (Char 'f') Down _ _ -> 
-            pure $ updateAction g SARight
+            pure $ g { _snake = updateSnakeAction _snake SARight }
 
         EventKey (Char 'q') Down _ _ -> 
             exitSuccess
