@@ -26,14 +26,14 @@ data Game = Game
 
 
 makeNewFood :: Game -> IO Food
-makeNewFood game = fix $ \loop -> do
+makeNewFood game@Game{..} = fix $ \loop -> do
         food <- makeRandomFood 
-        if food `elem` _snake game  then loop else pure food
+        if snakeInterference _snake food then loop else pure food
 
 
 isPossibleSnake :: Snake -> Bool
-isPossibleSnake s = let (x, y) = head s in 
-           x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
+isPossibleSnake s = let (x, y) = snakeHead s 
+                     in x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
 
 
 initGame :: IO Game
@@ -41,7 +41,7 @@ initGame = do
     snake <- initSnake
     food <- fix $ \loop -> do 
         food <- makeRandomFood 
-        if food == head snake then loop else pure food
+        if food == snakeHead snake  then loop else pure food
     pure $ Game InGame food snake SAStop 0
 
 
@@ -55,12 +55,12 @@ updateGame _ g@Game{..} = case _state of
            then 
                 pure $ g { _state = GameOver } 
            else 
-                if head snake == _food
+                if snakeHead snake == _food
                     then do 
                          food <- makeNewFood g 
                          pure $ g { _food = food, _snake = snake, _score = _score + 1 }
                     else
-                         pure $ g { _snake = init snake } 
+                         pure $ g { _snake = prevSnake snake } 
     GameOver -> pure g
 
 
@@ -68,8 +68,8 @@ drawWorld :: Game -> IO Picture
 drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
         [ drawCell red _food
-        , drawCell (greyN 0.3) (head _snake)
-        , pictures $ map (drawCell (greyN 0.6)) (tail _snake)
+        , drawCell (greyN 0.3) (snakeHead _snake)
+        , pictures $ map (drawCell (greyN 0.6)) (snakeTail _snake)
         , translate (-wWidth/2+10) (-wHeight/2+10) . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
         ]
 
