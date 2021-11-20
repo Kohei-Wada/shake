@@ -24,10 +24,11 @@ data Game = Game
     }
 
 
+
 makeNewFood :: Game -> IO Food
 makeNewFood game@Game{..} = fix $ \loop -> do
-        food <- makeRandomFood 
-        if snakeInterference _snake food then loop else pure food
+        f <- makeRandomFood 
+        if snakeInterference _snake f then loop else pure f
 
 
 isPossibleSnake :: Snake -> Bool
@@ -37,28 +38,27 @@ isPossibleSnake s = let (x, y) = snakeHead s
 
 initGame :: IO Game
 initGame = do 
-    snake <- initSnake
-    food <- fix $ \loop -> do 
-        food <- makeRandomFood 
-        if food == snakeHead snake  then loop else pure food
-    pure $ Game InGame food snake 0
+    s <- initSnake
+    f <- fix $ \loop -> do 
+        f <- makeRandomFood 
+        if f == snakeHead s then loop else pure f
+    pure $ Game InGame f s 0
 
 
 updateGame :: Float -> Game -> IO Game
 updateGame _ g@Game{..} = case _state of 
     InGame -> do 
-        let snake = updateSnake _snake 
-
-        if isPossibleSnake snake || selfIntersection snake 
+        let s = updateSnake _snake 
+        if isPossibleSnake s || selfIntersection s
            then 
                 pure $ g { _state = GameOver } 
            else 
-                if snakeHead snake == _food
+                if snakeHead s == _food
                     then do 
-                         food <- makeNewFood g 
-                         pure $ g { _food = food, _snake = snake, _score = _score + 1 }
+                         f <- makeNewFood g 
+                         pure $ g { _food = f, _snake = s, _score = _score + 1 }
                     else
-                         pure $ g { _snake = prevSnake snake } 
+                         pure $ g { _snake = prevSnake s } 
     GameOver -> pure g
 
 
@@ -133,7 +133,7 @@ eventHandler e g@Game{..} = case _state of
 gameMain :: IO ()
 gameMain = do
     let window = InWindow windowTitle (wWidth, wHeight) (100, 100)
-    game <- initGame
-    playIO window white 20 game drawWorld eventHandler updateGame
+    g <- initGame
+    playIO window white 20 g drawWorld eventHandler updateGame
 
 

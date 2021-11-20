@@ -1,4 +1,4 @@
-{-#LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards #-}
 module Snake where
 
 import Types
@@ -76,6 +76,7 @@ updateSnakeAction s@Snake{..} a =
         if a /= invAction _action then s { _action = a } else s
 
 
+-- Warning : It is wasteful because it reserves memory even when the snake is stationary.
 updateSnake :: Snake -> Snake
 updateSnake s@Snake{..} = 
     let newHead = moveSnake _action (snakeHead s) in s { _ls = newHead : _ls }
