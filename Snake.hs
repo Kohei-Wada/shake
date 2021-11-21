@@ -65,10 +65,7 @@ moveSnake SARight (x, y) = (x + 1, y)
 
 
 initSnake :: IO Snake
-initSnake = do 
-    r <- createSystemRandom 
-    p <- randomPosition r
-    return $ Snake [p] SAStop
+initSnake = randomPosition >>= \p -> return $ Snake [p] SAStop
 
 
 updateSnakeAction :: Snake -> SnakeAction -> Snake

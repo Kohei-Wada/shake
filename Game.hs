@@ -41,7 +41,7 @@ initGame = do
     fs <- randomFoods nFoods 
     s  <- fix $ \loop -> do 
         s <- initSnake
-        if any (\f -> _pos f == snakeHead s) fs then loop else pure s
+        if any ( (== snakeHead s) . _pos ) fs then loop else pure s
     pure $ Game InGame fs s 0
 
 
@@ -53,7 +53,7 @@ updateGame _ g@Game{..} = case _state of
            then 
                 pure $ g { _state = GameOver } 
            else 
-                if any (\f -> snakeHead s == _pos f) _foods 
+                if any ((== snakeHead s) . _pos) _foods 
                     then do 
                          let fs = rmFoodByPos _foods (snakeHead s)
                          f  <- makeNewFood g 
@@ -61,7 +61,6 @@ updateGame _ g@Game{..} = case _state of
                     else
                          pure $ g { _snake = prevSnake s } 
     GameOver -> pure g
-
 
 
 drawWorld :: Game -> IO Picture

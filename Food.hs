@@ -13,9 +13,10 @@ data Food = Food
     } deriving Eq
 
 
+
 randomFood :: IO Food
 randomFood = do 
-    p <- createSystemRandom >>= randomPosition 
+    p <- randomPosition 
     return $ Food p
 
 
@@ -31,3 +32,5 @@ randomFoods n = do
 
 rmFoodByPos :: [Food] -> Position -> [Food]
 rmFoodByPos fs p = filter (\f -> _pos f /= p) fs
+
+
