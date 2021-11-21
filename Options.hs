@@ -12,5 +12,3 @@ cellSize   = 20
 cellWidth  = fromIntegral $ wWidth  `div` cellSize
 cellHeight = fromIntegral $ wHeight `div` cellSize
 
-
-
