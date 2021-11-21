@@ -20,7 +20,7 @@ randomFood = do
 
 
 randomFoods :: Int -> IO [Food]
-randomFoods 0 = randomFood >>= \f -> return [f]
+randomFoods 0 = return []
 randomFoods n = do 
     fs <- randomFoods (n - 1) 
     f  <- fix $ \loop -> do 
@@ -29,13 +29,5 @@ randomFoods n = do
     return (f : fs)
 
 
-obtainFood :: [Food] -> Position -> Maybe Food
-obtainFood [] _     = Nothing
-obtainFood (f:fs) p = if _pos f == p then Just f else obtainFood fs p
-
-
-
-rmFood :: [Food] -> Food -> [Food]
-rmFood fs f = filter (==f) fs
-
-
+rmFoodByPos :: [Food] -> Position -> [Food]
+rmFoodByPos fs p = filter (\f -> _pos f /= p) fs

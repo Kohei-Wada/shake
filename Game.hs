@@ -18,7 +18,7 @@ data GameState = InGame | GameOver
 
 data Game = Game
     { _state  :: GameState
-    , _foods  :: Food
+    , _foods  :: [Food]
     , _snake  :: Snake
     , _score  :: Int
     }
@@ -27,7 +27,8 @@ data Game = Game
 makeNewFood :: Game -> IO Food
 makeNewFood game@Game{..} = fix $ \loop -> do
         f <- randomFood 
-        if snakeInterference _snake (_pos f) then loop else pure f
+        if snakeInterference _snake (_pos f) || any (== f) _foods 
+           then loop else pure f
 
 
 isPossibleSnake :: Snake -> Bool
@@ -37,11 +38,11 @@ isPossibleSnake s = let (x, y) = snakeHead s
 
 initGame :: IO Game
 initGame = do 
-    s <- initSnake
-    f <- fix $ \loop -> do 
-        f <- randomFood 
-        if _pos f == snakeHead s then loop else pure f
-    pure $ Game InGame f s 0
+    fs <- randomFoods nFoods 
+    s  <- fix $ \loop -> do 
+        s <- initSnake
+        if any (\f -> _pos f == snakeHead s) fs then loop else pure s
+    pure $ Game InGame fs s 0
 
 
 updateGame :: Float -> Game -> IO Game
@@ -52,19 +53,21 @@ updateGame _ g@Game{..} = case _state of
            then 
                 pure $ g { _state = GameOver } 
            else 
-                if snakeHead s == _pos _foods
+                if any (\f -> snakeHead s == _pos f) _foods 
                     then do 
-                         f <- makeNewFood g 
-                         pure $ g { _foods = f, _snake = s, _score = _score + 1 }
+                         let fs = rmFoodByPos _foods (snakeHead s)
+                         f  <- makeNewFood g 
+                         pure $ g { _foods = f : fs, _snake = s, _score = _score + 1 }
                     else
                          pure $ g { _snake = prevSnake s } 
     GameOver -> pure g
 
 
+
 drawWorld :: Game -> IO Picture
 drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
-        [ drawCell red (_pos _foods)
+        [ pictures $ map (\f -> drawCell red (_pos f)) _foods
         , drawCell (greyN 0.3) (snakeHead _snake)
         , pictures $ map (drawCell (greyN 0.6)) (snakeTail _snake)
         , translate (-wWidth/2+10) (-wHeight/2+10) . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)

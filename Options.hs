@@ -1,11 +1,15 @@
 module Options where
 
+
+nFoods :: Int
+nFoods = 5
+
 wWidth, wHeight :: Num a => a
 wWidth  = 1000
 wHeight = 1000
 
 windowTitle :: String
-windowTitle = "Snake Game"
+windowTitle = "Shake Game"
 
 cellSize, cellWidth, cellHeight :: Num a => a
 cellSize   = 20
