@@ -16,6 +16,7 @@ import System.Exit
 
 data GameState = InGame | GameOver
 
+
 data Game = Game
     { _state  :: GameState
     , _foods  :: [Food]
@@ -32,8 +33,8 @@ makeNewFood game@Game{..} = fix $ \loop -> do
 
 
 isPossibleSnake :: Snake -> Bool
-isPossibleSnake s = let (x, y) = snakeHead s 
-                     in x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
+isPossibleSnake s = x < 0 || x >= cellWidth || y < 0 || y >= cellHeight
+    where (x, y) = snakeHead s
 
 
 initGame :: IO Game
@@ -53,10 +54,11 @@ updateGame _ g@Game{..} = case _state of
            then 
                 pure $ g { _state = GameOver } 
            else 
-                if any ((== snakeHead s) . _pos) _foods 
+                let sHead = snakeHead s in
+                if any ((== sHead) . _pos) _foods 
                     then do 
-                         let fs = rmFoodByPos _foods (snakeHead s)
-                         f  <- makeNewFood g 
+                         let fs = rmFoodByPos _foods sHead 
+                         f <- makeNewFood g 
                          pure $ g { _foods = f : fs, _snake = s, _score = _score + 1 }
                     else
                          pure $ g { _snake = prevSnake s } 
@@ -90,11 +92,6 @@ drawWorld Game{..} = case _state of
         ]
 
 
-{--
-   Warning : Type too fast, the snake will dead because the speed vector 
-             will change continuously before the game is updated.
---}
---
 eventHandler :: Event -> Game -> IO Game
 eventHandler e g@Game{..} = case _state of
     InGame -> case e of
@@ -127,7 +124,6 @@ eventHandler e g@Game{..} = case _state of
             exitSuccess
 
         _ -> pure g 
-
 
     GameOver -> case e of
         EventKey (Char 'q') Down _ _ -> 

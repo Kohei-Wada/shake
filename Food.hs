@@ -13,7 +13,6 @@ data Food = Food
     } deriving Eq
 
 
-
 randomFood :: IO Food
 randomFood = do 
     p <- randomPosition 

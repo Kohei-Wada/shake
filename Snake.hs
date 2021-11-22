@@ -5,9 +5,12 @@ import Types
 import Utils
 import System.Random.MWC
 
+
+
 data Snake = Snake 
-    { _ls     :: [Position]
-    , _action :: SnakeAction
+    { _ls       :: [Position]
+    , _action   :: SnakeAction
+    , _interval :: Bool
     }
 
 data SnakeAction 
@@ -45,7 +48,7 @@ snakeInterference s p = p `elem` _ls s
 
 
 prevSnake :: Snake -> Snake
-prevSnake s@Snake{..} = s{ _ls = init _ls }
+prevSnake s@Snake{..} = s { _ls = init _ls }
 
 
 invAction :: SnakeAction -> SnakeAction 
@@ -65,22 +68,27 @@ moveSnake SARight (x, y) = (x + 1, y)
 
 
 initSnake :: IO Snake
-initSnake = randomPosition >>= \p -> return $ Snake [p] SAStop
+initSnake = randomPosition >>= \p -> return $ Snake [p] SAStop True
 
 
 updateSnakeAction :: Snake -> SnakeAction -> Snake
 updateSnakeAction s@Snake{..} a = 
-        if a /= invAction _action then s { _action = a } else s
+    if a /= invAction _action && _interval 
+       then s { _action = a , _interval = False} else s
 
 
 -- Warning : It is wasteful because it reserves memory even when the snake is stationary.
 updateSnake :: Snake -> Snake
-updateSnake s@Snake{..} = 
-    let newHead = moveSnake _action (snakeHead s) in s { _ls = newHead : _ls }
+updateSnake s@Snake{..} = s { _ls = newHead : _ls , _interval = True}
+    where newHead = moveSnake _action (snakeHead s) 
 
 
 selfIntersection :: Snake -> Bool
 selfIntersection s@Snake{..} = 
     if _action == SAStop then False else head _ls `elem` tail _ls
                                   
+
+reverseSnake :: Snake -> Snake
+reverseSnake s@Snake{..} = s { _ls = reverse _ls, _action = invAction _action } 
+
 
