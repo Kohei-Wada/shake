@@ -40,8 +40,8 @@ initGame :: IO Game
 initGame = do 
     fs <- randomFoods nFoods 
     s  <- fix $ \loop -> do 
-        s <- initSnake
-        if any ( (== snakeHead s) . _pos ) fs then loop else pure s
+        s' <- initSnake
+        if any ((== snakeHead s') . _pos ) fs then loop else pure s'
     pure $ Game InGame fs s 0
 
 
@@ -66,26 +66,35 @@ updateGame _ g@Game{..} = case _state of
 drawWorld :: Game -> IO Picture
 drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
-        [ pictures $ map (\f -> drawCell red (_pos f)) _foods
+        [ pictures $ map ((drawCell red) . _pos) _foods
+
         , drawCell (greyN 0.3) (snakeHead _snake)
+
         , pictures $ map (drawCell (greyN 0.6)) (snakeTail _snake)
-        , translate (-wWidth/2+10) (-wHeight/2+10) . scale 0.2 0.2 $ text ("SCORE: " ++ show _score)
+
+        , translate (-wWidth / 2 + 10) (-wHeight / 2 + 10) . scale 0.2 0.2 $ 
+            text ("SCORE: " ++ show _score)
         ]
 
         where
-            cell = translate (-wWidth/2) (-wHeight/2) $ 
+            cell = translate (-wWidth / 2) (-wHeight / 2) $ 
                 polygon [(0, 0), (0, cellSize), (cellSize, cellSize), (cellSize, 0)]
 
             drawCell c (x, y) = translate (fromIntegral x * cellSize) (fromIntegral y * cellSize) $ 
                 color c cell
 
     GameOver -> pure $ pictures
-        [ translate (-270) 20     . scale 0.7 0.7 $ text "FUCK YOU!"
+        [ translate (-270) 20     . scale 0.7 0.7 $ text "GAME OVER!"
         , translate (-100) (-50)  . scale 0.3 0.3 $ text ("SCORE: " ++ show _score)
         , translate (-200) (-120) . scale 0.3 0.3 $ text "Press Enter to Retry"
         ]
 
 
+{--
+   Warning : Type too fast, the snake will dead because the speed vector 
+             will change continuously before the game is updated.
+--}
+--
 eventHandler :: Event -> Game -> IO Game
 eventHandler e g@Game{..} = case _state of
     InGame -> case e of
@@ -135,6 +144,6 @@ gameMain :: IO ()
 gameMain = do
     let window = InWindow windowTitle (wWidth, wHeight) (100, 100)
     g <- initGame
-    playIO window white 20 g drawWorld eventHandler updateGame
+    playIO window white 15 g drawWorld eventHandler updateGame
 
 
