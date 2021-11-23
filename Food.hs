@@ -33,3 +33,4 @@ rmFoodByPos :: [Food] -> Position -> [Food]
 rmFoodByPos fs p = filter (\f -> _pos f /= p) fs
 
 
+

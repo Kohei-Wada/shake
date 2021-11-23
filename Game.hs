@@ -46,22 +46,27 @@ initGame = do
     pure $ Game InGame fs s 0
 
 
+eatFood :: Snake -> Game -> Bool
+eatFood s Game{..} = let h = snakeHead s in any ((==h) . _pos) _foods
+
+
+rmFood :: Snake -> Game -> [Food]
+rmFood s Game{..} = let h = snakeHead s in rmFoodByPos _foods h 
+
+
 updateGame :: Float -> Game -> IO Game
 updateGame _ g@Game{..} = case _state of 
     InGame -> do 
         let s = updateSnake _snake 
         if isPossibleSnake s || selfIntersection s
-           then 
-                pure $ g { _state = GameOver } 
-           else 
-                let sHead = snakeHead s in
-                if any ((== sHead) . _pos) _foods 
-                    then do 
-                         let fs = rmFoodByPos _foods sHead 
-                         f <- makeNewFood g 
-                         pure $ g { _foods = f : fs, _snake = s, _score = _score + 1 }
-                    else
-                         pure $ g { _snake = prevSnake s } 
+           then pure $ g { _state = GameOver } 
+           else if eatFood s g
+                then do 
+                     f <- makeNewFood g 
+                     pure $ g { _foods = f : rmFood s g, _snake = s, _score = _score + 1 }
+                else
+                     pure $ g { _snake = prevSnake s } 
+
     GameOver -> pure g
 
 
