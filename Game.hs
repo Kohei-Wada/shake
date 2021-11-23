@@ -73,12 +73,9 @@ updateGame _ g@Game{..} = case _state of
 drawWorld :: Game -> IO Picture
 drawWorld Game{..} = case _state of
     InGame -> pure $ pictures
-        [ pictures $ map ((drawCell red) . _pos) _foods
-
-        , drawCell (greyN 0.3) (snakeHead _snake)
-
-        , pictures $ map (drawCell (greyN 0.6)) (snakeTail _snake)
-
+        [ pictures $ map ((drawCell foodColor) . _pos) _foods
+        , drawCell snakeHeadColor (snakeHead _snake)
+        , pictures $ map (drawCell snakeTailColor) (snakeTail _snake)
         , translate (-wWidth / 2 + 10) (-wHeight / 2 + 10) . scale 0.2 0.2 $ 
             text ("SCORE: " ++ show _score)
         ]
@@ -145,6 +142,6 @@ gameMain :: IO ()
 gameMain = do
     let window = InWindow windowTitle (wWidth, wHeight) (100, 100)
     g <- initGame
-    playIO window white 15 g drawWorld eventHandler updateGame
+    playIO window stageColor 20 g drawWorld eventHandler updateGame
 
 
